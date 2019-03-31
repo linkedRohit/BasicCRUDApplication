@@ -1,0 +1,609 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<project name="symfony2" default="build" xmlns:if="ant:if" xmlns:unless="ant:unless" >
+    <property environment="env" />
+    <property name="classes.dir" value="build"/>
+    <property name="thirdparty.dir" value="src/ThirdParty"/>
+    <property name="default.project.dir" value="./apps/jpgateway/current" />
+    <property name="default.apps.dir" value="vendor/externals"/>
+    <property name="default.docker.name" value="jpgateway" />
+    <property name="default.docker.dir" value="./app/docker" />
+    <property name="src.dir" value="./src"/>
+    <property name="app.dir" value="./app"/>
+    <property name="bundle.dir" value="./src/Naukri" />
+    <property name="git.username" value="gitdeployer"/>
+    <property name="git.password" value="gitdeployer"/>
+    <property name="project.name" value="jpgateway" />
+    <property name="prefix.tag" value="v6.3.4" />
+
+    <condition property="app.refresh" value="true" else="false">
+        <isset property="refresh"/>
+    </condition>
+
+    <condition property="apps.dir" value="${apps}" else="${default.apps.dir}">
+        <isset property="apps"/>
+    </condition>
+
+    <condition property="docker_name" value="${dockerName}" else="${default.docker.name}">
+        <isset property="dockerName"/>
+    </condition>
+
+    <condition property="docker_dir" value="${dockerDir}" else="${default.docker.dir}">
+        <isset property="dockerDir"/>
+    </condition>
+
+    <property name="prefix_dir" value="${default.project.dir}" />
+
+    <condition property="prefix_dir" value="${projectDir}" else="${default.project.dir}">
+        <isset property="projectDir"/>
+    </condition>
+
+    <condition property="environment" value="${env}" else="cluster">
+        <isset property="env"/>
+    </condition>
+
+    <target name="test">
+        <echo message="ENV --- ${env.NC_DOCKER_REPOSITORY}" />
+        <echo message="${apps.dir}" />
+        <echo message="path - ${basedir}" />
+    </target>
+
+    <target name="createimage">
+  		<antcall target="appsetup" />
+  		<dockerBuild repo="naukri/jpgateway:${tag}" dir="." />
+  		<dockerPush tag="docker.infoedge.com:5000/naukri/jpgateway:${tag}" />
+  	</target>
+
+    <target name="utFull">
+        <dockerPull repo="infra/php_ci7:7.1.15.v1" />
+        <dockerSetup dir="${docker_dir}" confDir="jpgateway_ut" namespace="${docker_name}ut" />
+        <antcall target="setup" />
+        <antcall target="prepareBuild" />
+        <antcall target="dockerPhpunit" />
+	<antcall target="phpcs-ci-docker"/>
+        <antcall target="cleanBuild" />
+    </target>
+
+    
+<target name="prepareBuild">
+        <echo message="Preparing temporary log directories" />
+            <dockerRun image="${docker_name}ut_web_1" command="mkdir -p /dockerdata/app" />
+            <dockerRun image="${docker_name}ut_web_1" command="chmod -R 777 /dockerdata" />
+            <dockerRun image="${docker_name}ut_web_1" command="mkdir /dockerdata/app/api" />
+            <dockerRun image="${docker_name}ut_web_1" command="mkdir /dockerdata/app/browser" />
+            <dockerRun image="${docker_name}ut_web_1" command="mkdir /dockerdata/app/coverage" />
+            <dockerRun image="${docker_name}ut_web_1" command="mkdir /dockerdata/app/logs" />
+            <dockerRun image="${docker_name}ut_web_1" command="mkdir /dockerdata/app/pdepend" />
+             <dockerRun image="${docker_name}ut_web_1" command="mkdir /dockerdata/app/phpdox" />
+    </target>
+
+    <target name="cleanBuild">
+        <echo message="Moving reports to Build Directory" />
+        <dockerRun image="${docker_name}ut_web_1" command="chmod -R 777 /dockerdata/app" />
+        <dockerRun image="${docker_name}ut_web_1" command="mv /dockerdata/app app/build" />
+        <dockerRun image="${docker_name}ut_web_1" command="chmod -R 777 app/build" />
+        <dockerRun image="${docker_name}ut_web_1" command="rm -rf /dockerdata" />
+    </target>
+
+    <target name="dockerPhpunit">
+      	<dockerRun image="${docker_name}ut_web_1" command="rm -rf app/build" />
+        <dockerRun image="${docker_name}ut_web_1" command="rm -rf app/cache" />
+        <dockerRun image="${docker_name}ut_web_1" command="mkdir app/cache" />
+        <dockerRun image="${docker_name}ut_web_1" command="chmod -R 777 app/cache" />
+        <dockerRun image="${docker_name}ut_web_1" command="rm -rf app/logs" />
+        <dockerRun image="${docker_name}ut_web_1" command="mkdir app/logs" />
+        <dockerRun image="${docker_name}ut_web_1" command="chmod -R 777 app/logs" />
+        <dockerRun image="${docker_name}ut_web_1" command="ln -s Symfony2.8.26.2 /usr/local/Symfony-2.8" />
+        <dockerRun image="${docker_name}ut_web_1" command="php composer.phar dump-autoload -o" />
+        <dockerRun image="${docker_name}ut_web_1" command="/opt/php_req/vendor/bin/phpunit -c app/phpunit.xml --testsuite 'Project Test Suite' -d memory_limit=1024M" returnProp="docker-phpunit-return" />
+        <fail message="php ut failed">
+            <condition>
+                    <equals arg1="255" arg2="${docker-phpunit-return}" />
+            </condition>
+        </fail>
+    </target>
+
+    <target name="deploy">
+        <dockerPull repo="infra/php_ci7:7.1.15.v1" />
+        <antcall target="setup"/>
+        <dockerSetup dir="${docker_dir}" confDir="jpgateway_ut" namespace="${docker_name}" />
+        <antcall target="dockerInit"/>
+        <dockerRun image="${docker_name}_web_1" command="rm -rf app/cache" />
+        <dockerRun image="${docker_name}_web_1" command="mkdir app/cache" />
+        <dockerRun image="${docker_name}_web_1" command="chmod -R 777 app/cache" />
+        <dockerRun image="${docker_name}_web_1" command="rm -rf app/logs" />
+        <dockerRun image="${docker_name}_web_1" command="mkdir app/logs" />
+        <dockerRun image="${docker_name}_web_1" command="chmod -R 777 app/logs" />
+        <dockerRun image="${docker_name}_web_1" command="php composer.phar dump-autoload" />
+    </target>
+
+    <target name="setup">
+        <dockerRun image="${docker_name}_web_1" command="rm -rf ./vendor/externals/*" />
+        <antcall target="appsetup"/>
+    </target>
+
+    <target name="appsetup">
+        <antcall target="modules" />
+        <antcall target="appConfig"/>
+    </target>
+
+    <target name="modules" description="Paramters">
+	<sequential>
+	<echo message="removing ${apps.dir}" />
+	<delete dir="${apps.dir}">
+	</delete>
+        <module name="gnb" repository="http://gitdeployer:gitdeployer@gitlab.infoedge.com/naukrilibs/recruitergnb.git" dest="${apps.dir}/recruiterGnb" link="${src.dir}/Naukri/ComponentBundle" dir="${apps.dir}/recruiterGnb/ComponentBundle" branch="intermediateGNB" />
+	<exec executable="cp">
+            <arg value="${src.dir}/Naukri/ComponentBundle/Resources/config/parametersGnb_cluster.yml" />
+            <arg value="${src.dir}/Naukri/ComponentBundle/Resources/config/parametersGnb.yml" />
+        </exec>
+        <exec executable="cp">
+            <arg value="${src.dir}/Naukri/ComponentBundle/Resources/config/nc_caches_cluster.yml" />
+            <arg value="${src.dir}/Naukri/ComponentBundle/Resources/config/nc_caches.yml" />
+        </exec>
+	</sequential>
+    </target>
+
+    <target name="dockerInit">
+        <echo message="ENV --- ${env.NC_DOCKER_REPOSITORY}" />
+        <dockerPull repo="naukri/jpgateway" />
+        <dockerSetup dir="${docker_dir}" confDir="jpgateway" namespace="${docker_name}" />
+    </target>
+
+    <target name="build" depends="dbConfig,appConfig,phpunit,phpcs-ci-docker"/>
+    <!-- phpdox, lint,phploc,pdepend,phpmd-ci,phpcs-ci,phpcpd,phpcb,-->
+    <target name="build-parallel" depends="lint,tools-parallel,phpunit,phpcb"/>
+    <target name="dbConfig" description="Paramters">
+        <exec executable="cp">
+            <arg value="config/nc_databases_${environment}.yml" />
+            <arg value="config/nc_databases.yml" />
+        </exec>
+    </target>
+
+    <target name="appConfig" description="Parameters">
+            <exec executable="rm">
+                    <arg value="-f" />
+                    <arg value="src/Naukri/JobPostingGatewayBundle/Resources/config/database/nc_databases.yml" />
+            </exec>
+            <exec executable="ln">
+                    <arg value="-s" />
+                    <arg value="nc_databases_${environment}.yml" />
+                    <arg value="src/Naukri/JobPostingGatewayBundle/Resources/config/database/nc_databases.yml" />
+            </exec>
+            <exec executable="rm">
+                    <arg value="-f" />
+                    <arg value="src/Naukri/JobPostingGatewayBundle/Resources/config/app/app_config.php" />
+            </exec>
+            <exec executable="ln">
+                    <arg value="-s" />
+                    <arg value="app_config_${environment}.php" />
+                    <arg value="src/Naukri/JobPostingGatewayBundle/Resources/config/app/app_config.php" />
+            </exec>
+
+    </target>
+
+    <target name="tools-parallel" description="Run tools in parallel">
+        <parallel threadCount="2">
+            <sequential>
+                <antcall target="pdepend"/>
+                <antcall target="phpmd-ci"/>
+            </sequential>
+            <antcall target="phpcpd"/>
+            <antcall target="phpcs-ci"/>
+            <antcall target="phploc"/>
+            <antcall target="phpdox"/>
+        </parallel>
+    </target>
+
+    <target name="lint" description="Perform syntax check of sourcecode files">
+        <apply executable="php" failonerror="true">
+            <arg value="-l" />
+
+            <fileset dir="src">
+                <include name="**/*.php" />
+                <modified />
+            </fileset>
+
+            <fileset dir="src/">
+                <include name="**/*Test.php" />
+                <modified />
+            </fileset>
+        </apply>
+    </target>
+
+    <target name="phploc" description="Measure project size using PHPLOC">
+        <exec executable="phploc">
+            <arg value="--log-csv" />
+            <arg value="app/build/logs/phploc.csv" />
+            <arg path="src" />
+        </exec>
+    </target>
+
+    <target name="pdepend" description="Calculate software metrics using PHP_Depend">
+        <exec executable="pdepend">
+            <arg value="--jdepend-xml=app/build/logs/jdepend.xml" />
+            <arg value="--jdepend-chart=app/build/pdepend/dependencies.svg" />
+            <arg value="--overview-pyramid=app/build/pdepend/overview-pyramid.svg" />
+            <arg path="src" />
+        </exec>
+    </target>
+
+    <target name="phpmd" description="Perform project mess detection using PHPMD and print human readable output. Intended for usage on the command line before committing.">
+        <exec executable="phpmd">
+            <arg path="src" />
+            <arg value="text" />
+            <arg value="app/Resources/jenkins/phpmd.xml" />
+        </exec>
+    </target>
+
+    <target name="phpmd-ci" description="Perform project mess detection using PHPMD creating a log file for the continuous integration server">
+        <exec executable="phpmd">
+            <arg path="src" />
+            <arg value="xml" />
+            <arg value="app/Resources/jenkins/phpmd.xml" />
+            <arg value="--reportfile" />
+            <arg value="app/build/logs/pmd.xml" />
+        </exec>
+    </target>
+
+    <target name="phpcs" description="Find coding standard violations using PHP_CodeSniffer and print human readable output. Intended for usage on the command line before committing.">
+        <exec executable="phpcs">
+            <arg value="--standard=Symfony2" />
+            <arg path="src" />
+        </exec>
+    </target>
+
+    <target name="phpcs-ci" description="Find coding standard violations using PHP_CodeSniffer creating a log file for the continuous integration server">
+        <exec executable="phpcs" output="/dev/null">
+            <arg value="--report=checkstyle" />
+            <arg value="--report-file=app/build/logs/checkstyle.xml" />
+            <arg value="--standard=Symfony2" />
+            <arg path="src" />
+        </exec>
+    </target>
+
+    <target name="phpcpd" description="Find duplicate code using PHPCPD">
+        <exec executable="phpcpd">
+            <arg value="--log-pmd" />
+            <arg value="app/build/logs/pmd-cpd.xml" />
+            <arg path="src" />
+        </exec>
+    </target>
+
+    <target name="phpdox" description="Generate API documentation using phpDox">
+        <exec executable="phpdox">
+            <arg value="-f" />
+            <arg path="app/Resources/jenkins/phpdox.xml" />
+        </exec>
+    </target>
+
+    <target name="phpunit" description="Run unit tests with PHPUnit">
+        <exec executable="${phpunit}" failonerror="false">
+            <arg value="-c" />
+            <arg path="app/phpunit.xml" />
+        </exec>
+    </target>
+
+    <target name="phpcb" description="Aggregate tool output with PHP_CodeBrowser">
+        <exec executable="phpcb">
+            <arg value="--log" />
+            <arg path="app/build/logs" />
+            <arg value="--source" />
+            <arg path="src" />
+            <arg value="--output" />
+            <arg path="app/build/code-browser" />
+        </exec>
+    </target>
+    <target name="phpcomposer" description="Run php composer">
+        <exec executable="php">
+            <arg value="composer.phar" />
+            <arg value="--optimize" />
+            <arg value="--dump-autoload" />
+        </exec>
+    </target>
+
+   
+    <target name="phpcs-ci-docker" description="Find coding standard violations using PHP_CodeSniffer creating a log file for the continuous integration server">
+                <dockerRun image="${docker_name}ut_web_1" command="/opt/php_req/vendor/bin/phpcs -d memory_limit=1024M --report=checkstyle --report-file=/dockerdata/app/logs/checkstyle.xml --standard=/usr/local/phpci/ruleset-phpcs.xml -pwv src/Naukri/JobPostingGatewayBundle/*" returnProp="phpcs-ci-docker-return" />
+        <echo message="phpcs-ci-docker-return - ${phpcs-ci-docker-return} - XXXX" />
+        <fail message="php cs failed">
+            <condition>
+                    <equals arg1="255" arg2="${phpcs-ci-docker-return}" />
+            </condition>
+        </fail>
+    </target>
+ 
+    <target name="serviceBranchName">
+    		<exec executable="bash">
+        		<arg value="-c" />
+        		<arg value="echo &quot;TAG=${prefix.tag}-beta$(echo $((git tag -l '${prefix.tag}-beta*' &amp;&amp; echo '${prefix.tag}-beta0')| sed -r 's/.*-beta([0-9]+)/\1/' |sort -rn | head -1) + 1 | bc)&quot; >> TAG" />
+    		</exec>
+    </target>
+
+    <target name="fix-errors">
+                        <sequential>
+                                <autofix />
+                                <phpcbf />
+                                <phpcs />
+                        </sequential>
+        </target>
+        <target name="check-errors">
+                <phpcs />
+        </target>
+
+ <macrodef name="phpcbf">
+                <sequential>
+                        <exec executable="php">
+                                        <arg value="phpcbf.phar" />
+                                        <arg value="-s" />
+                                        <arg value="--colors" />
+                                        <arg value="--extensions=php" />
+                                        <arg value="-d" />
+                                        <arg value="memory_limit=2048M" />
+                                        <arg value="--standard=app/codesniffer.xml" />
+                                        <arg value="${bundle.dir}" />
+                        </exec>
+                </sequential>
+        </macrodef>
+
+
+<macrodef name="autofix">
+                <sequential>
+                        <exec executable="bash">
+                                        <arg value="autofix" />
+                                        <arg value="${bundle.dir}" />
+                        </exec>
+                </sequential>
+        </macrodef>
+
+        <macrodef name="phpcs">
+                <sequential>
+                        <exec executable="php">
+                                        <arg value="phpcs.phar" />
+                                        <arg value="--colors" />
+                                        <arg value="-s" />
+                                        <arg value="--extensions=php" />
+                                        <arg value="-d" />
+                                        <arg value="memory_limit=2048M" />
+                                        <arg value="--standard=app/codesniffer.xml" />
+                                        <arg value="${bundle.dir}" />
+                        </exec>
+                </sequential>
+        </macrodef>
+
+
+    <!-- MACROS -->
+    <macrodef name="moduleSetup">
+        <attribute name="repository" />
+        <attribute name="dest" />
+        <attribute name="link" default="NOT_SET" />
+        <attribute name="name" />
+        <attribute name="dir" default="NOT_SET" />
+        <attribute name="branch" default="master" />
+
+        <sequential>
+            <module repository="@{repository}"  dest="@{dest}"  link="@{link}"  name="@{name}"  dir="@{dir}" branch="@{branch}" />
+
+            <ant antfile="@{dest}/build.xml" dir="@{dest}" />
+        </sequential>
+    </macrodef>
+
+    <macrodef name="module">
+        <attribute name="repository" />
+        <attribute name="dest" />
+        <attribute name="link" default="NOT_SET" />
+        <attribute name="name" />
+        <attribute name="dir" default="NOT_SET" />
+        <attribute name="branch" default="master" />
+
+
+        <sequential>
+
+            <condition property="@{name}_cloned" else="${app.refresh}">
+                <not>
+                    <available file="@{dest}" type="dir"/>
+                </not>
+            </condition>
+
+            <echo message="exists @{name} : ${@{name}_cloned}" />
+            <echo message="@{repository} @{dest} @{link} @{name} @{dir} @{branch} ${@{name}_cloned}" />
+            <load_module repository="@{repository}"  dest="@{dest}"  link="@{link}"  name="@{name}"  dir="@{dir}"  branch="@{branch}"  if:true="${@{name}_cloned}"   />
+        </sequential>
+    </macrodef>
+
+    <macrodef name="load_module">
+        <attribute name="repository" />
+        <attribute name="dest" />
+        <attribute name="link" default="NOT_SET" />
+        <attribute name="name" />
+        <attribute name="dir" default="NOT_SET" />
+        <attribute name="branch" default="master" />
+
+        <sequential>
+            <condition property="dirPrefix" value="../../" else="">
+                <matches pattern="./" string="@{dir}"/>
+            </condition>
+
+            <echo message="load_module: name: @{name} - link: @{link} - dest: @{dest} - dir: @{dir} - repo: @{repository}" />
+            <delete dir="@{dest}" />
+            <delete file="@{link}" followsymlinks="false" removenotfollowedsymlinks="true" />
+            <git-clone-pull repository="@{repository}" dest="@{dest}" branch="@{branch}" />
+            <symlink link="@{link}" resource="${dirPrefix}@{dir}" overwrite="true" />
+        </sequential>
+    </macrodef>
+
+
+    <macrodef name="git">
+        <attribute name="command" />
+        <attribute name="dir" default="" />
+        <element name="args" optional="true" />
+        <sequential>
+            <echo message="git @{command}  ${args}" />
+            <exec executable="git" dir="@{dir}">
+                <arg value="@{command}" />
+                <args/>
+            </exec>
+        </sequential>
+    </macrodef>
+    <macrodef name="git-clone-pull">
+        <attribute name="repository" />
+        <attribute name="dest" />
+        <attribute name="branch" default="master" />
+        <sequential>
+            <condition property="cloned" else="false">
+                <and>
+                    <available file="@{dest}/.git" type="dir"/>
+                    <resourcecount when="gt" count="0">
+                        <fileset dir="@{dest}/.git"/>
+                    </resourcecount>
+                </and>
+            </condition>
+            <echo message="@{repository} - ${cloned}" />
+            <git command="clone" unless:true="${cloned}">
+                <args>
+                    <arg value="@{repository}" />
+                    <arg value="@{dest}" />
+                </args>
+            </git>
+            <git command="pull" dir="@{dest}" />
+            <git command="checkout" dir="@{dest}" >
+                <args>
+                    <arg value="@{branch}" />
+                </args>
+            </git>
+        </sequential>
+    </macrodef>
+
+    
+<macrodef name="dockerRun">
+
+        <attribute name="image" />
+        <attribute name="command" />
+        <attribute name="returnProp" default="abc" />
+        <sequential>
+            <!--<exec executable="docker">
+                <arg value="exec" />
+                <arg value="-i" />
+                <arg value="-t" />
+                <arg value="@{image}" />
+                <arg value="@{command}" />
+                <arg value=" &gt;  /dev/null  " />
+            </exec>-->
+            <exec executable="sh" errorproperty="error.docker.command" resultproperty="@{returnProp}">
+                <arg value="-c" />
+                <arg value="docker exec @{image} @{command}" />
+            </exec>
+
+
+        </sequential>
+    </macrodef>
+
+    <macrodef name="dockerBuild">
+        <attribute name="dir" />
+        <attribute name="repo" />
+
+        <sequential>
+            <echo message="repo --- @{repo}" />
+            <exec executable="docker">
+                <arg value="build" />
+                <arg value="--tag" />
+                <arg value="${env.NC_DOCKER_REPOSITORY}/@{repo}" />
+                <arg value="@{dir}" />
+            </exec>
+	    <exec executable="docker">
+                <arg value="push" />
+                <arg value="${env.NC_DOCKER_REPOSITORY}/@{repo}" />
+            </exec>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="dockerPush">
+  		<attribute name="tag" />
+
+  		<sequential>
+  				<echo message="pushing docker --- @{tag} to docker.infoedge.com:5000 private registry" />
+  				<exec executable="docker">
+  					<arg value="push" />
+  					<arg value="@{tag}" />
+  				</exec>
+  		</sequential>
+  	</macrodef>
+
+    <macrodef name="dockerPull">
+        <attribute name="repo" />
+        <element name="args" optional="true" />
+        <sequential>
+            <echo message="dockerPull - @{repo} - ${env.NC_DOCKER_REPOSITORY} @{env.NC_DOCKER_REPOSITORY}" />
+            <exec executable="docker">
+                <arg value="pull" />
+                <arg value="${env.NC_DOCKER_REPOSITORY}/@{repo}" />
+            </exec>
+            <exec executable="docker">
+                <arg value="tag" />
+                <arg value="${env.NC_DOCKER_REPOSITORY}/@{repo}" />
+                <arg value="@{repo}" />
+            </exec>
+
+        </sequential>
+    </macrodef>
+
+    <macrodef name="dockerSetup">
+        <attribute name="url" default="" />
+        <attribute name="dir" />
+        <attribute name="confdir" />
+        <attribute name="namespace" />
+        <element name="args" optional="true" />
+        <sequential>
+            <condition property="docker.pull" value="false" else="true">
+                <isset property="docikerFileDir"/>
+            </condition>
+
+            <echo message="dockerSetup - @{dir} - @{confdir} - @{url} - @{namespace}" />
+            <git-clone-pull repository="@{url}" dest="@{dir}"  unless:blank="@{url}" />
+            <exec executable="cat">
+                <arg value="@{dir}/@{confdir}/docker-compose.yml" />
+            </exec>
+            <dockerCompose dir="@{dir}/@{confdir}" namespace="@{namespace}">
+                <dockerargs />
+                <args />
+            </dockerCompose>
+        </sequential>
+    </macrodef>
+
+
+    <macrodef name="dockerCompose">
+        <attribute name="dir" />
+        <attribute name="namespace" />
+        <element name="args" optional="true" />
+        <element name="dockerargs" optional="true" />
+        <sequential>
+            <exec executable="docker-compose" dir="@{dir}">
+                <arg value="-p" />
+                <arg value="@{namespace}" />
+                <dockerargs />
+                <arg value="stop" />
+            </exec>
+            <exec executable="docker-compose" dir="@{dir}">
+                <arg value="-p" />
+                <arg value="@{namespace}" />
+                <dockerargs />
+                <arg value="rm" />
+                <arg value="--force" />
+            </exec>
+
+
+            <exec executable="docker-compose" dir="@{dir}">
+                <arg value="-p" />
+                <arg value="@{namespace}" />
+                <dockerargs />
+                <arg value="--verbose" />
+                <arg value="up" />
+                <arg value="-d" />
+                <args />
+            </exec>
+        </sequential>
+    </macrodef>
+
+
+</project>

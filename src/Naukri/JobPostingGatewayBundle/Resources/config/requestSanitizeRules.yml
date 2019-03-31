@@ -1,0 +1,17 @@
+parameters:
+    strictFind: ["<",">","\"","\\","(",")","'","=","//",";"]
+    strictReplace: ["&lt;","&gt;","&quot;","\\\\","","","","","",""]
+
+    relaxedFind: ["<",">"]
+    relaxedReplace: ["&lt;","&gt;"]
+
+    performStrictReplace:
+        toBeReplaced: %strictFind%
+        replaceWith: %strictReplace%
+
+    performRelaxedReplace:
+        toBeReplaced: %relaxedFind%
+        replaceWith: %relaxedReplace%
+
+    request_sanitize:
+        default: %performStrictReplace%

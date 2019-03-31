@@ -1,0 +1,14 @@
+parameters:
+    utbundle.smarty.custom.render.class: Naukri\UtilityBundle\UtilSmartyExtension\CustomRenderExtension
+
+services:
+    utbundle.smarty.extension.custom.render:
+        class: %utbundle.smarty.custom.render.class%
+        arguments: ["@service_container"]
+        tags:
+            -  { name: smarty.extension } 
+    utbundle.smarty.extension.assets:
+        class: Naukri\UtilityBundle\UtilSmartyExtension\NaukriAssetsExtension
+        arguments: ["@service_container"]
+        tags:
+            -  { name: smarty.extension } 

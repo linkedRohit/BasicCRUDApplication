@@ -1,0 +1,43 @@
+parameters:
+  asset.version:
+      script.version:
+          naukri_jquery:
+            name: "jquery%ASSET_MIN%.js"
+            type: "NC0"
+
+          naukri_require:
+            name: "require%ASSET_MIN%.js"
+            type: "NC0"
+
+          jp_app:
+            name: "app_v1%ASSET_MIN%.js"
+            type: "OLD_JP"
+   
+          uba_js:
+            name: "postingUba_v2%ASSET_MIN%.js"
+            type: "OLD_JP"
+
+          ore_app:
+            name: "ore_app.js"
+            type: "AC"
+
+          vendor_app:
+            name: "common_ore_app.js"
+            type: "AC"
+
+          ore_reports_app_js:
+            name: "ore_reports_app.js"
+            type: "RPC"
+
+          common_ore_reports_app_js:
+            name: "common_ore_reports_app.js"
+            type: "RPC"
+
+      css.version:
+          ore_main:
+            name: "ore_app.css"
+            type: "AC"
+
+          ore_reports_app_css:
+            name: "ore_reports_app.css"
+            type: "RPC"

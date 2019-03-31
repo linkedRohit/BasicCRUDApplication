@@ -1,0 +1,3 @@
+naukri_job_posting_gateway_homepage:
+    path:     /
+    defaults: { _controller: NaukriJobPostingGatewayBundle:Default:index }

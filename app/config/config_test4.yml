@@ -1,0 +1,84 @@
+imports:
+    - { resource: config.yml }
+
+framework:
+    router:
+        resource: "%kernel.root_dir%/config/routing_dev.yml"
+        strict_requirements: true
+    profiler: { only_exceptions: false }
+    test: ~
+    
+    session:    
+      cookie_httponly: true
+      name: "JP_SESSION"
+      handler_id:  jp.session.handler
+      cookie_lifetime: 31536000
+
+monolog:
+    handlers:
+        main:
+            type:  stream
+            path:  "%kernel.logs_dir%/%kernel.environment%.log"
+            level: error
+            channels: ["!jp"]
+            
+        jp:
+            type: fingers_crossed
+            channels: ["jp"]
+            handler: grouped
+            action_level: info
+            
+        grouped:
+            type: group
+            members: [filestream, sqlhandle]   
+            
+        filestream:
+            type: stream
+            formatter: jp.log.formatter
+            path:  "%kernel.logs_dir%/%kernel.environment%.log"
+            level: info
+            
+        sqlhandle:
+            type:  service
+            id: jp.sql.log.handler
+            
+
+assetic:
+    use_controller: true
+
+#swiftmailer:
+#    delivery_address: me@example.com
+
+parameters:
+  custom.log.handler:
+    level: debug
+    email: "abc@gmail.com"
+    
+  BASE_STATIC_URL_IMG: "https://test4.static.infoedge.com"
+  
+  BASE_STATIC_URL_CSS: "https://test4.static.infoedge.com"
+  
+  BASE_STATIC_URL_JS: "https://test4.static.infoedge.com"
+
+  BASE_RSTATIC_URL_CSS: "https://test4.static.infoedge.com/rstatic/css"
+    
+  BASE_STATIC_URL_S4: "https://test4.static.infoedge.com:8080/s/4"
+  
+  BASE_STATIC_URL_S1: "https://test4.static.infoedge.com:8080/s/1"
+  
+  BASE_STATIC_URL_S0: "https://test4.static.infoedge.com:8080/s/0"
+  
+
+  # external URLs
+  REF_SHARE_URL: "https://test4.posting.infoedge.com/referral/vre"
+  
+  ASSET_MIN: ".min"
+  
+  zendmail:
+      transport: smtp
+      name: localhost
+      host: localhost
+      port: 25
+      connection_class:
+      user: 
+      password: 

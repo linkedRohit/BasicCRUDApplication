@@ -1,0 +1,74 @@
+imports:
+    - { resource: config.yml }
+
+framework:
+
+monolog:
+    handlers:
+        main:
+            type:  stream
+            path:  "%kernel.logs_dir%/%kernel.environment%.log"
+            level: error
+            channels: ["!jp"]
+            
+        jp:
+            type: fingers_crossed
+            channels: ["jp"]
+            handler: grouped
+            action_level: info
+            
+        grouped:
+            type: group
+            members: [filestream, sqlhandle]   
+            
+        filestream:
+            type: stream
+            formatter: jp.log.formatter
+            path:  "%kernel.logs_dir%/%kernel.environment%.log"
+            level: info
+            
+        sqlhandle:
+            type:  service
+            id: jp.sql.log.handler
+            
+
+assetic:
+    use_controller: true
+
+#swiftmailer:
+#    delivery_address: me@example.com
+
+parameters:
+  custom.log.handler:
+    level: debug
+    email: "abc@gmail.com"
+    
+  BASE_STATIC_URL_IMG: "http://test3.static.infoedge.com"
+  
+  BASE_STATIC_URL_CSS: "http://test3.static.infoedge.com"
+  
+  BASE_STATIC_URL_JS: "http://test3.static.infoedge.com"
+  
+  BASE_RSTATIC_URL_CSS: "http://test3.static.infoedge.com/rstatic/css"
+  
+    
+  BASE_STATIC_URL_S4: "http://test3.static.infoedge.com:8080/s/4"
+  
+  BASE_STATIC_URL_S1: "http://test3.static.infoedge.com:8080/s/1"
+  
+  BASE_STATIC_URL_S0: "http://test3.static.infoedge.com:8080/s/0"
+  
+
+  # external URLs
+  REF_SHARE_URL: "http://test3.posting.infoedge.com/referral/vre"
+  
+  ASSET_MIN: ".min"
+  
+  zendmail:
+      transport: smtp
+      name: localhost
+      host: localhost
+      port: 25
+      connection_class:
+      user: 
+      password: 

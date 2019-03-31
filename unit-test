@@ -1,0 +1,6 @@
+#!/bin/sh
+
+sh clear-cache dev
+sh clear-cache test
+/usr/local/php-7.1.0/bin/phpunit -c app src/Naukri/JobPostingGatewayBundle/Tests/$1
+sh clear-cache dev

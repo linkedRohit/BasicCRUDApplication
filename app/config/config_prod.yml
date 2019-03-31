@@ -1,0 +1,87 @@
+imports:
+    - { resource: config.yml }
+
+#framework:
+#    validation:
+#        cache: apc
+
+#doctrine:
+#    orm:
+#        metadata_cache_driver: apc
+#        result_cache_driver: apc
+#        query_cache_driver: apc
+
+monolog:
+    handlers:
+        main:
+            type:  stream
+            path:  "/var/log/apps/jpgateway/prod.framework.log"
+            level: error
+            channels: ["!jp"]
+            
+        jp:
+            type: fingers_crossed
+            channels: ["jp"]
+            handler: grouped
+            action_level: info
+            
+        grouped:
+            type: group
+            members: [filestream, sqlhandle]   
+            
+        filestream:
+            type: stream
+            formatter: jp.log.formatter
+            path:  "/var/log/apps/jpgateway/prod.jobposting.log"
+            level: info
+            
+        sqlhandle:
+            type:  service
+            id: jp.sql.log.handler
+
+parameters:
+  
+  custom.log.handler:
+            level: error
+            email: "jpteam@naukri.com"
+
+  BASE_STATIC_URL_IMG: "https://img.naukimg.com"  
+  BASE_STATIC_URL_CSS: "https://css.naukimg.com"  
+  BASE_STATIC_URL_JS: "https://js.naukimg.com"
+ 
+  BASE_RSTATIC_URL_CSS: "https://static.naukimg.com/rstatic/css"
+
+  NC_IMG_PATH: "%BASE_STATIC_URL_IMG%/s/4p/100/i"
+  NC_CSS_PATH: "%BASE_STATIC_URL_CSS%/s/4p/100/c"
+  NC_JS_PATH: "%BASE_STATIC_URL_JS%/s/4p/100/j"
+
+  AC_IMG_PATH: "%BASE_STATIC_URL_IMG%/s/5p/136/docker/i"
+  AC_CSS_PATH: "%BASE_STATIC_URL_CSS%/s/5p/136/docker/c"
+  AC_JS_PATH: "%BASE_STATIC_URL_JS%/s/5p/136/docker/j"
+
+  RPC_IMG_PATH: "%BASE_STATIC_URL_IMG%/s/5p/136_reports/docker/i"
+  RPC_CSS_PATH: "%BASE_STATIC_URL_CSS%/s/5p/136_reports/docker/c"
+  RPC_JS_PATH: "%BASE_STATIC_URL_JS%/s/5p/136_reports/docker/j"
+
+  NC2_IMG_PATH: "%BASE_STATIC_URL_IMG%/s/1/2/i"
+  NC2_CSS_PATH: "%BASE_STATIC_URL_CSS%/s/1/2/c"
+  NC2_JS_PATH: "%BASE_STATIC_URL_JS%/s/1/2/j"
+
+  NC0_IMG_PATH: "%BASE_STATIC_URL_IMG%/s/0p/0/i"
+  NC0_CSS_PATH: "%BASE_STATIC_URL_CSS%/s/0p/0/c"
+  NC0_JS_PATH: "%BASE_STATIC_URL_JS%/s/0p/0/j"
+
+  OLD_JP_JS_PATH: "%BASE_STATIC_URL_JS%/Static4p/113/release/j"
+
+  RC_CSS_PATH: "%BASE_RSTATIC_URL_CSS%"
+
+  ASSET_MIN: ".min"
+
+  zendmail:
+      transport: smtp
+      name: 172.10.122.27
+      host: 172.10.122.27
+      port: 25
+      connection_class:
+      user:
+      password: 

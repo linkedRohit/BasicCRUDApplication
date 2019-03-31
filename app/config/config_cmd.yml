@@ -1,0 +1,68 @@
+imports:
+    - { resource: config.yml }
+
+#framework:
+#    validation:
+#        cache: apc
+
+#doctrine:
+#    orm:
+#        metadata_cache_driver: apc
+#        result_cache_driver: apc
+#        query_cache_driver: apc
+
+monolog:
+    handlers:
+        main:
+            type:  stream
+            path:  "/var/log/apps/jobposting/prod.framework.log"
+            level: error
+            channels: ["!jp"]
+            
+        jp:
+            type: fingers_crossed
+            channels: ["jp"]
+            handler: grouped
+            action_level: info
+            
+        grouped:
+            type: group
+            members: [filestream, sqlhandle]   
+            
+        filestream:
+            type: stream
+            formatter: jp.log.formatter
+            path:  "/var/log/apps/jobposting/prod.jobposting.log"
+            level: info
+            
+        sqlhandle:
+            type:  service
+            id: jp.sql.log.handler
+
+parameters:
+  
+  custom.log.handler:
+            level: error
+            email: "arpit.jain@naukri.com, swati.arya@naukri.com"
+  
+
+  BASE_STATIC_URL_IMG: "https://img.naukimg.com"  
+  BASE_STATIC_URL_CSS: "https://css.naukimg.com"  
+  BASE_STATIC_URL_JS: "https://js.naukimg.com"
+  
+  BASE_RSTATIC_URL_CSS: "https://static.naukimg.com/rstatic/css"  
+  
+  
+  # external URLs
+  REF_SHARE_URL: "https://jp.referralrecruit.com/referral/vre"
+  
+  ASSET_MIN: ".min"
+  
+  zendmail:
+      transport: smtp
+      name: 172.10.122.27
+      host: 172.10.122.27
+      port: 25
+      connection_class:
+      user: 
+      password:

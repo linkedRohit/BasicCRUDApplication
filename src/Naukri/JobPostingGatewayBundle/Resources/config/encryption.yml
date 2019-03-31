@@ -1,0 +1,20 @@
+photo:
+  type: rijndael
+  current_version: 1
+  keys:
+    "1": ["so93naPoma^^am@nsi!&nAA))2!1cew1", "@9dnsQSn00&*AvQ^"]
+NaukriRecruiter:
+  type: rijndael
+  current_version: 1
+  keys:
+    "1": ["zo38gaqwds!Nyn^mtj!&nBB))5!9bdq2", "@7edqPGs12^&HcY!"]
+NaukriGulfJobSeeker:
+  type: rijndael
+  current_version: 1
+  keys:
+    "1": ["ao39hbqwPs!Mzn^mtK!&nCB))3!4bdq4", "@8sfwPGs46^&JsZ^"]
+NaukriReferralRecruiter:
+  type: rijndael
+  current_version: 1
+  keys:
+    "1": ["bp47fsqrQa!Nn^mtK!&qBC))2!1few1", "@6qgqQRs46^&JsZ!"]
