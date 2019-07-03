@@ -1,5 +1,0 @@
-_assetic:
-    resource: .
-    type: assetic
-_app:
-    resource: /home/rohit/Projects/user-management/app/config/routing_dev.yml

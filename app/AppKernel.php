@@ -23,7 +23,6 @@ class AppKernel extends Kernel
             new AppBundle\AppBundle(),
             new Naukri\JobPostingGatewayBundle\NaukriJobPostingGatewayBundle(),
             new Naukri\UtilityBundle\NaukriUtilityBundle(),
-            new Naukri\ComponentBundle\NaukriComponentBundle(),
         );
 
         if (in_array($this->getEnvironment(), array('dev', 'test', 'docker'), true)) {
