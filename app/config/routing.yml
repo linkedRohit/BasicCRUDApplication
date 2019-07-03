@@ -1,5 +1,3 @@
-naukri_component:
-    resource: "@NaukriComponentBundle/Resources/config/routing.yml"
 jobposting:
     resource: "@NaukriJobPostingGatewayBundle/Controller/"
     type:     annotation

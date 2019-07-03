@@ -38,9 +38,11 @@ class AccountDao extends BaseDao
     }
 
     public function getAssignedGroups($id) {
+	if(empty($id)) return array();
 	$dbConn = $this->getAccountsDBConnection();
         $bindedString = $this->getBatchInsertBindStatement(count($id),"","");
-        $selectStatement = "select ag.userId, ag.active, g.id, g.name from groups g, assignedGroups ag where ag.userId in (" . $bindedString . ") and g.id = ag.groupId";
+	$selectStatement = "select ag.userId, ag.active, g.id, g.name from groups g, assignedGroups ag where ag.userId in (" . $bindedString . ") and g.id = ag.groupId";
+	echo $selectStatement;die;
         $res = $dbConn->prepare($selectStatement);
         $this->bindInQueryValues($res, $id);
         $res->execute();
