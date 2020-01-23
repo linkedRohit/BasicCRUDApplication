@@ -1,6 +1,0 @@
-#!/bin/sh
-
-mv app/cache/$1 app/cache/$1.$RANDOM
-mkdir app/cache/$1
-chmod 777 -R app/cache/$1
-
