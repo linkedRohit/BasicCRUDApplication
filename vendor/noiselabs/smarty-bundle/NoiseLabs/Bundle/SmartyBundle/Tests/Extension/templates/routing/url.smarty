@@ -1,3 +1,0 @@
-<urls>
-    <url>{url slug='my-blog-post'}blog_show{/url}</url>
-</urls>

@@ -1,3 +1,0 @@
-<actions>
-    <action>{'AcmeArticleBundle:Article:recentArticles'|render:['max'=>3]}</action>
-</actions>
