@@ -1,4 +1,0 @@
-jobposting:
-    resource: "@NaukriJobPostingGatewayBundle/Controller/"
-    type:     annotation
-    prefix:   /

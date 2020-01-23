@@ -1,2 +1,0 @@
-parameters:
-    CLUSTER_URL: '{{CLUSTER_URL}}'
